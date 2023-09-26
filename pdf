@@ -1,0 +1,84 @@
+import React, { useState, useEffect } from 'react';
+import { Document, Page, pdfjs } from 'react-pdf';
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
+
+const PdfViewer = () => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [scale, setScale] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [actionHistory, setActionHistory] = useState([]);
+
+  useEffect(() => {
+    const loadingTask = pdfjs.getDocument('path-to-your-pdf.pdf');
+    loadingTask.promise.then((pdf) => {
+      setTotalPages(pdf.numPages);
+    });
+  }, []);
+
+  const handleZoomIn = () => {
+    const newScale = scale + 0.1;
+    setActionHistory([...actionHistory, { scale, rotation, currentPage }]);
+    setScale(newScale);
+  };
+
+  const handleZoomOut = () => {
+    const newScale = Math.max(0.1, scale - 0.1);
+    setActionHistory([...actionHistory, { scale, rotation, currentPage }]);
+    setScale(newScale);
+  };
+
+  const handleRotateLeft = () => {
+    const newRotation = (rotation - 90) % 360;
+    setActionHistory([...actionHistory, { scale, rotation, currentPage }]);
+    setRotation(newRotation);
+  };
+
+  const handleRotateRight = () => {
+    const newRotation = (rotation + 90) % 360;
+    setActionHistory([...actionHistory, { scale, rotation, currentPage }]);
+    setRotation(newRotation);
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handleUndo = () => {
+    if (actionHistory.length > 0) {
+      const previousAction = actionHistory[actionHistory.length - 1];
+      setActionHistory(actionHistory.slice(0, -1));
+      setScale(previousAction.scale);
+      setRotation(previousAction.rotation);
+      setCurrentPage(previousAction.currentPage);
+    }
+  };
+
+  return (
+    <div>
+      <h2>PDF Viewer</h2>
+      <button onClick={handleZoomIn}>Zoom In</button>
+      <button onClick={handleZoomOut}>Zoom Out</button>
+      <button onClick={handleRotateLeft}>Rotate Left</button>
+      <button onClick={handleRotateRight}>Rotate Right</button>
+      <button onClick={handleUndo}>Undo</button>
+      <button onClick={handlePreviousPage}>Previous Page</button>
+      <button onClick={handleNextPage}>Next Page</button>
+      <Document file="path-to-your-pdf.pdf">
+        <Page pageNumber={currentPage} scale={scale} rotate={rotation} />
+      </Document>
+      <p>Page {currentPage} of {totalPages}</p>
+    </div>
+  );
+};
+
+export default PdfViewer;
